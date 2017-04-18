@@ -1,0 +1,12 @@
+{
+  "name": "smartcity_server",
+  "description": "Smart City Mock-up project(server side)",
+  "author": "grassjelly",
+  "dependencies": {
+    "express": "*",
+    "socket.io": "*",
+    "firmata": "~0.16.0",
+    "serialport": "~4.0.7"
+  },
+  "engine": "node >= 0.10.29"
+}

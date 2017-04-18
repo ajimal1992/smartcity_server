@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <link href="css/style.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+    <div class="switch">
+        <input id="0" onclick="toggle_lamp(this);" class="cmn-toggle cmn-toggle-round" type="checkbox">
+        <label for="0"></label>
+    </div>
+
+    <div class="switch">
+        <input id="1" onclick="toggle_lamp(this);" class="cmn-toggle cmn-toggle-round" type="checkbox">
+        <label for="1"></label>
+    </div>
+
+    <div class="switch">
+        <input id="2" onclick="toggle_lamp(this);" class="cmn-toggle cmn-toggle-round" type="checkbox">
+        <label for="2"></label>
+    </div>
+
+    <div id="humidity"></div>
+    <div id="temperature"></div>
+    <div id="intensity"></div>
+    <div id="carpark"></div>
+
+    <script>
+        function toggle_lamp(state) {
+            //this function sends the required state of the lamppost to the server
+            var lamppost = {
+                id: null,
+                state: null
+            };
+            lamppost.id = state.getAttribute('id');
+            lamppost.state = state.checked;
+            console.log(lamppost);
+            socket.emit("lamppost", lamppost);
+        }
+
+        var socket = io.connect();
+
+        socket.on('lamp_states', function(data) {
+            //This function receives all the remembered states of the lamppost from the server
+            //This is to prevent the UI from displaying the defualt view "all off" every time the client is refreshed
+            console.log(data);
+            document.getElementById("0").checked = data[0];
+            document.getElementById("1").checked = data[1];
+            document.getElementById("2").checked = data[2];
+        });
+
+        socket.on('sensors', function(data) {
+            //This function receives all the sensor readings from the server
+            console.log(data);
+            document.getElementById("humidity").innerHTML = "Humidity: " + data.humidity;
+            document.getElementById("temperature").innerHTML = "Temperature: " + data.temperature;
+            document.getElementById("intensity").innerHTML = "Light Intensity: " + data.intensity;
+
+            if (data.carpark == 1)
+                document.getElementById("carpark").innerHTML = "Carpark: Occupied";
+            else
+                document.getElementById("carpark").innerHTML = "Carpark: Empty";
+
+        });
+    </script>
+
+</body>
+
+</html>
