@@ -25,6 +25,11 @@
         <label for="2"></label>
     </div>
 
+    <div class="switch">
+        <input id="3" onclick="toggle_lamp(this);" class="cmn-toggle cmn-toggle-round" type="checkbox">
+        <label for="3"></label>
+    </div>
+
     <div id="humidity"></div>
     <div id="temperature"></div>
     <div id="intensity"></div>
@@ -52,6 +57,8 @@
             document.getElementById("0").checked = data[0];
             document.getElementById("1").checked = data[1];
             document.getElementById("2").checked = data[2];
+            document.getElementById("3").checked = data[3];
+
         });
 
         socket.on('sensors', function(data) {

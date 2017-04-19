@@ -5,8 +5,9 @@ var io = require('socket.io')(server);
 //either use cloud service port or local port:3000
 var port = process.env.PORT || 8000;
 //import firmata library
-var Board = require("firmata");
+var firmata = require("firmata");
 var SerialPort = require("serialport");
+var request = require('request');
 
 
 //define lamppost pin assignments here
@@ -21,45 +22,46 @@ server.listen(port, function() {
 //host the index file
 app.use(express.static(__dirname));
 
-Board.requestPort(function(error, port) {
-    var board = new Board(port.comName);
-    board.on("ready", function() {
-        io.on('connection', function(socket) {
+var board = new firmata.Board("/dev/ttyACM0", function(err) {
+    io.on('connection', function(socket) {
+        //send all the current states of the lamppost if new client is open
+        //this is to prevent the UI from displaying the defualt view "all off" every time the client is refreshed
+        io.emit("lamp_states", lamp_states);
 
-            //send all the current states of the lamppost if new client is open
-            //this is to prevent the UI from displaying the defualt view "all off" every time the client is refreshed
-            io.emit("lamp_states", lamp_states)
+        if (err) {
+            console.log(err);
+            return;
+        }
 
-            if (error) {
-                console.log(error);
-                return;
-            }
+        //initialize lamppost pins
+        for (i = 0; i < lamp_pins.length; i++) {
+            board.pinMode(lamp_pins[i], board.MODES.OUTPUT);
+        }
 
-            //initialize lamppost pins
-            for (i = 0; i < lamp_pins.length; i++) {
-                board.pinMode(lamp_pins[i], board.MODES.OUTPUT);
-            }
-
-            // turn on/off the led when something is received from client
-            socket.on("lamppost", function(lamppost_data) {
+        // turn on/off the led when something is received from client
+        socket.on("lamppost", function(lamppost_data) {
+            if (parseInt(lamppost_data.id) == 3) {
+                toggleRealLampPost(lamppost_data.state);
+            } else {
                 var pin = lamp_pins[parseInt(lamppost_data.id)];
+
                 //turn on/off the correct lamppost by id
                 board.digitalWrite(pin, lamppost_data.state);
-                //remember the states of the lamppost
-                lamp_states[lamppost_data.id] = lamppost_data.state;
-            });
+            }
+            //remember the states of the lamppost
+            lamp_states[lamppost_data.id] = lamppost_data.state;
         });
     });
 });
 
 
-var port = new SerialPort('/dev/ttyACM1', {
+var sensorsport = new SerialPort('/dev/ttyACM1', {
     baudrate: 115200,
     parser: SerialPort.parsers.readline('\n')
 });
 
 
-port.on('data', function(data) {
+sensorsport.on('data', function(data) {
     //sensors object
     var sensors = {
         temperature: null,
@@ -77,3 +79,35 @@ port.on('data', function(data) {
     //send the data to the client
     io.emit("sensors", sensors);
 });
+
+app.get('/lamppost', function(request, response) {
+    //this opens an API for external app to control real lamp post
+    var state = request.query.state;
+    //convert string to real booleans
+    if (state == 'true')
+        state = true;
+    else if (state == 'false')
+        state = false;
+    response.end("Received Lamp Post State: " + state);
+    toggleRealLampPost(state);
+});
+
+function toggleRealLampPost(state) {
+    //localhost:8000/lamppost?state=true
+    if (state == true) {
+        var url = "http://mylinkit.local:8001/?value=high"
+    } else if (state == false) {
+        var url = "http://mylinkit.local:8001/?value=low"
+    }
+
+    request(url, function(error, response, body) {
+        // console.log('error:', error); // Print the error if one occurred
+        // console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+        // console.log('body:', body); // Print the HTML for the Google homepage.
+    });
+    //stopre lamp post states
+    lamp_states[3] = state;
+
+    //update the client of the lamppost states
+    io.emit("lamp_states", lamp_states);
+}
