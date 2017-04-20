@@ -12,6 +12,7 @@ var request = require('request');
 
 //define lamppost pin assignments here
 var lamp_pins = [5, 6, 7];
+var boot_pin = 13;
 var lamp_states = [];
 
 //open port 8000
@@ -22,7 +23,11 @@ server.listen(port, function() {
 //host the index file
 app.use(express.static(__dirname));
 
-var board = new firmata.Board("/dev/ttyACM0", function(err) {
+var board = new firmata.Board("/dev/lampposts", function(err) {
+    //boot-up indicator
+    board.pinMode(boot_pin, board.MODES.OUTPUT);
+    board.digitalWrite(boot_pin, 1);
+    
     io.on('connection', function(socket) {
         //send all the current states of the lamppost if new client is open
         //this is to prevent the UI from displaying the defualt view "all off" every time the client is refreshed
@@ -55,7 +60,7 @@ var board = new firmata.Board("/dev/ttyACM0", function(err) {
 });
 
 
-var sensorsport = new SerialPort('/dev/ttyACM1', {
+var sensorsport = new SerialPort('/dev/sensors', {
     baudrate: 115200,
     parser: SerialPort.parsers.readline('\n')
 });
