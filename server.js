@@ -73,13 +73,17 @@ sensorsport.on('data', function(data) {
         temperature: null,
         humididty: null,
         intensity: null,
+        geolocation: null,
+        speeding: null,
         carpark: null
     }
     //parse data from serialport
     sensors.temperature = data.substring(0, data.indexOf('t'));
     sensors.humidity = data.substring(data.indexOf('t') + 1, data.indexOf('h'));
     sensors.intensity = data.substring(data.indexOf('h') + 1, data.indexOf('i'));
-    sensors.carpark = data.substring(data.indexOf('i') + 1, data.indexOf('c'));
+    sensors.speeding = data.substring(data.indexOf('i') + 1, data.indexOf('s'));
+    sensors.geolocation = data.substring(data.indexOf('s') + 1, data.indexOf('g'));
+    sensors.carpark = data.substring(data.indexOf('g') + 1, data.indexOf('c'));
 
     console.log(sensors);
     //send the data to the client
