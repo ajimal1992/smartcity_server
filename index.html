@@ -34,6 +34,9 @@
     <div id="temperature"></div>
     <div id="intensity"></div>
     <div id="carpark"></div>
+    <div id="trafficlight1"></div>
+    <div id="trafficlight2"></div>
+
 
     <script>
         function toggle_lamp(state) {
@@ -73,6 +76,13 @@
             else
                 document.getElementById("carpark").innerHTML = "Carpark: Empty";
 
+        });
+
+        socket.on('trafficlight', function(data) {
+            //This function receives all the sensor readings from the server
+            console.log(data);
+            document.getElementById("trafficlight1").innerHTML = "Trafficlight : " + data.trafficlight1;
+            document.getElementById("trafficlight2").innerHTML = "Trafficlight : " + data.trafficlight2;
         });
     </script>
 

@@ -55,6 +55,7 @@ var board = new firmata.Board("/dev/lampposts", function(err) {
             }
             //remember the states of the lamppost
             lamp_states[lamppost_data.id] = lamppost_data.state;
+	    io.emit("lamp_states", lamp_states);
         });
     });
 });
@@ -84,6 +85,28 @@ sensorsport.on('data', function(data) {
     //send the data to the client
     io.emit("sensors", sensors);
 });
+
+
+var trafficport = new SerialPort('/dev/trafficlights', {
+    baudrate: 115200,
+    parser: SerialPort.parsers.readline('\n')
+});
+
+
+trafficport.on('data', function(data) {
+    //sensors object
+    var trafficlight = {
+        trafficlight1: null,
+        trafficlight2: null
+    }
+    //parse data from serialport
+    trafficlight.trafficlight1 = data.substring(0, data.indexOf('a'));
+    trafficlight.trafficlight2 = data.substring(data.indexOf('a') + 2, data.indexOf('b'));
+    console.log(trafficlight);
+    //send the data to the client
+    io.emit("trafficlight", trafficlight);
+});
+
 
 app.get('/lamppost', function(request, response) {
     //this opens an API for external app to control real lamp post
