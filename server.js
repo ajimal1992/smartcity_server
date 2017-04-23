@@ -13,7 +13,7 @@ var request = require('request');
 //define lamppost pin assignments here
 var lamp_pins = [5, 6, 7];
 var boot_pin = 13;
-var lamp_states = [];
+var lamp_states = [0,0,0];
 var trigger_is_done = true;
 
 //open port 8000
@@ -28,7 +28,7 @@ var board = new firmata.Board("/dev/lampposts", function(err) {
     //boot-up indicator
     board.pinMode(boot_pin, board.MODES.OUTPUT);
     board.digitalWrite(boot_pin, 1);
-
+    
     io.on('connection', function(socket) {
         //send all the current states of the lamppost if new client is open
         //this is to prevent the UI from displaying the defualt view "all off" every time the client is refreshed
@@ -46,16 +46,13 @@ var board = new firmata.Board("/dev/lampposts", function(err) {
 
         // turn on/off the led when something is received from client
         socket.on("lamppost", function(lamppost_data) {
-            if (parseInt(lamppost_data.id) == 2)
+
+            //trigger real lamp post if cluster 3 is triggered
+            if (parseInt(lamppost_data.id) == 2) 
                 toggleRealLampPost(lamppost_data.state);
-            var pin = lamp_pins[parseInt(lamppost_data.id)];
-
-            //turn on/off the correct lamppost by id
-            board.digitalWrite(pin, lamppost_data.state);
-
-            //remember the states of the lamppost
-            lamp_states[lamppost_data.id] = lamppost_data.state;
-            io.emit("lamp_states", lamp_states);
+            
+            var id = parseInt(lamppost_data.id)
+            toggleFakeLampPost(id, lamppost_data.state);
         });
     });
 });
@@ -85,12 +82,13 @@ sensorsport.on('data', function(data) {
     sensors.geolocation = data.substring(data.indexOf('s') + 1, data.indexOf('g'));
     sensors.carpark = data.substring(data.indexOf('g') + 1, data.indexOf('c'));
 
-    if (sensors.speeding == "1") {
+    if(sensors.speeding == "1")
+    {
         console.log("triggered");
-        blinkRealLamPost();
+        notifySpeeding();
     }
-
     console.log(sensors);
+
     //send the data to the client
     io.emit("sensors", sensors);
 });
@@ -110,6 +108,7 @@ trafficport.on('data', function(data) {
     }
 
     var ambulance;
+
     //parse data from serialport
     trafficlight.trafficlight1 = data.substring(0, data.indexOf('a'));
     trafficlight.trafficlight2 = data.substring(data.indexOf('a') + 1, data.indexOf('b'));
@@ -118,18 +117,20 @@ trafficport.on('data', function(data) {
     console.log(trafficlight.trafficlight1.length);
     //send the data to the client
 
-    if (ambulance == 1) {
+    //this block is to filter the data from sending continuously
+    //only send to client if ambulance data is parsed. Otherwise send traffic light data
+    if(ambulance ==  1){
         io.emit("ambulance", ambulance);
-    } else {
+    }
+
+    else{
         io.emit("trafficlight", trafficlight);
     }
-    // if(ambulance != null){
-    //     io.emit("ambulance", ambulance);
-    // }
 });
 
 
 app.get('/lamppost', function(request, response) {
+    //smartcity.local:8000/lamppost?state=true
     //this opens an API for external app to control real lamp post
     var state = request.query.state;
     //convert string to real booleans
@@ -139,10 +140,10 @@ app.get('/lamppost', function(request, response) {
         state = false;
     response.end("Received Lamp Post State: " + state);
     toggleRealLampPost(state);
+    toggleFakeLampPost(2,state);
 });
 
 function toggleRealLampPost(state) {
-    //localhost:8000/lamppost?state=true
     if (state == true) {
         var url = "http://mylinkit.local:8001/?value=high"
     } else if (state == false) {
@@ -160,21 +161,30 @@ function toggleRealLampPost(state) {
     io.emit("lamp_states", lamp_states);
 }
 
-function blinkRealLamPost() {
+function toggleFakeLampPost(id, state){
+    //turn on/off the correct lamppost by id
+    var pin = lamp_pins[id];
+
+    board.digitalWrite(pin, state);
+    
+    //remember the states of the lamppost
+    lamp_states[id] = state;
+    io.emit("lamp_states", lamp_states);
+}
+
+function notifySpeeding(){
     var state = true;
     var counter = 0;
-    var speed_trigger = setInterval(function() {
+    var speed_trigger = setInterval(function (){
         counter = counter + 1;
-
+  
         if (state == true) {
-
             // board.pinMode(boot_pin, board.MODES.OUTPUT);
             board.digitalWrite(7, true);
             var url = "http://mylinkit.local:8001/?value=high"
         } else if (state == false) {
 
             board.digitalWrite(7, false);
-
             var url = "http://mylinkit.local:8001/?value=low"
         }
         request(url, function(error, response, body) {
@@ -183,14 +193,11 @@ function blinkRealLamPost() {
             // console.log('body:', body); // Print the HTML for the Google homepage.
         });
         state = !state
-        if (counter == 10)
+        if(counter == 10){
             // return;
             clearInterval(speed_trigger);
-        //update the client of the lamppost states
-    }, 200);
-    //stopre lamp post states
-    lamp_states[3] = !state;
-
-    //update the client of the lamppost states
-    io.emit("lamp_states", lamp_states);
+            toggleRealLampPost(lamp_states[3]);
+            board.digitalWrite(7, lamp_states[2]);
+        }
+    },200);
 }
