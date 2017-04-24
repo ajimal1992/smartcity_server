@@ -5,7 +5,6 @@
 <script src="/socket.io/socket.io.js"></script>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js"></script>
 <style>
-
 header{
     color: #a64608;
     background-color: white;
@@ -14,7 +13,6 @@ header{
     font-size: 24px;
     padding: 0px 4px;
 }
-
 html {
   min-width: 100%;
   min-height: 100%;
@@ -35,20 +33,17 @@ footer {
     margin-bottom:0px;
 overflow: hidden;
 }
-
 .text {
     color: #FF741a;
     font-weight: bold;
     font-size: 26px;
     vertical-align: text-top;
 }
-
 .text_header{
     color: #21AEB4;
     font-size: 20px;
     font-weight: bold;
 }
-
 table td 
 {
   table-layout:fixed;
@@ -56,13 +51,11 @@ table td
   overflow:hidden;
   word-wrap:break-word;
 }
-
 .samplebackground {
     background-color: #0099ff;
     font-size: 1.2em;
     font-weight: bold;
 }
-
 /*ToggleButton*/
 .cmn-toggle {
   position: absolute;
@@ -112,9 +105,6 @@ input.cmn-toggle-round:checked + label:before {
 input.cmn-toggle-round:checked + label:after {
   margin-left: 50px;
 }
-
-
-
 /* canvas styles */
 html, body
 {
@@ -134,12 +124,9 @@ background-size: 100% 60%;
 background-image: url(images/bck.png), url(images/white.jpg);
 background-repeat: no-repeat;
 background-position: bottom, top;
-  width: 3047px;
-  height: 1300px;
+  width: 3353px;
+  height: 1335px;
 }
-
-
-
 #wrapper {
   margin-left: 45vw;
 }
@@ -159,53 +146,43 @@ background-position: bottom, top;
 #cleared {
   clear: both;
 }
-
 .tabletext label{
   display: block;
   margin: 0 auto;
 }
-
 .tablehead {
   background-color: #f4e1d2;
 }
-
 .tabletext{
   font-size: 18px;
   text-align: center;
 } 
-
 .usecaseText{
   font-size: 16px;
   color: black;
 }
-
 .usecaseTitle{
   font-weight: bold;
   font-size: 20px;
   color: #6599FF;
 }
-
 th {
   font-size: 18px;
   background-color: #f4e1d2;
   color: black;
 }
-
 .tableCp
 {
    table-layout:fixed;
 }
-
 .textTraffic {
   font-size: 16px;
   color: black;
 }
-
 input[type="text"]
 {
     font-size:20px;
 }
-
 /*ToggleButton*/
 .cmn-toggle {
   position: absolute;
@@ -255,7 +232,6 @@ input.cmn-toggle-round:checked + label:before {
 input.cmn-toggle-round:checked + label:after {
   margin-left: 50px;
 }
-
 </style>
 </head>
 <body>
@@ -266,7 +242,7 @@ input.cmn-toggle-round:checked + label:after {
 </header>
 
 <div id="wrapper">
-  <div class="text" id="leftbar"><img src ="images/real-time.png"></span>
+  <div class="text" id="leftbar"><img src ="images/real-time.png" height="70%"></span>
 <table border="1" bordercolor="#0D3F05" width="1320" height="600">
 <tr>
 <th>Agency</th>
@@ -290,9 +266,12 @@ input.cmn-toggle-round:checked + label:after {
 
 <tr><td rowspan="1" class="tablehead" align="center" ><strong style="font-size: 18px;color: black;background-color:#cce6ff">NParks</strong></td><td><img src="images/tree.jpg" style="width:110px;height:90px;float:left; padding-left:5px;"><p style="font-size: 18px;">&nbsp &nbsp Trees Planted</td><td class="tabletext"><div style="display: inline-block;">Orchard:&nbsp;</div><div>14</div></td></tr>
 
-</table>
+</table></br>
+<img src="images/videoStream.png" height="70%"></br>
+<iframe src="https://appear.in/gt-ses-2" width="800" height="450" frameborder="0"></iframe>
 </div>
-  
+
+
 <div class="text" id="rightbar"><span style="background-color: #ffdab9"></span></br>
 <div style="display: inline-block;" class = "usecaseTitle">Auto Carpark Charging System</div>
 
@@ -320,7 +299,6 @@ input.cmn-toggle-round:checked + label:after {
 <div class="textTraffic" style="display: inline-block; font-size:18px" id="desc"> Usual traffic condition.</div></br>
 <img id = "descImg" src="images/ok.jpg" style="width:180px;height:120px;padding-left:110px">
 </div>
-
 <div class="text" id="lastbar"></br>
 <div style="display: inline-block;" class = "usecaseTitle">Warning System for Speeding Vehicle</div>
 <div class="textTraffic" style="font-size:22px">Monitoring in progress ...</div>
@@ -331,19 +309,14 @@ input.cmn-toggle-round:checked + label:after {
 <tr><td rowspan="1" class="tablehead" align="center"><div style="width: 77px;" class="usecaseText">Time Logged</div></td><td><div class="usecaseText" id="speedTime"></div></td></tr>
 </table>
 <button onclick="ack()">Acknowledge</button><br></br></br></br></br>
-
 <div style="display: inline-block;" class = "usecaseTitle">AGV Location Tracking</div></br>
-
 <div class="usecaseText" style="display: inline-block;">AGV Plate Num: &nbsp &nbsp</div><input type="text" name="agvName" value="" id="mytextinput"><br>
 <input type="submit" value="Submit" onclick="return trackSubmit()">
 <input type="submit" value="Reset" onclick="return trackReset()">
 </br></br>
 <div class="usecaseText" style="font-size: 18px" id="agvText"></div>
-
 <img src="images/cairn.jpg" style="width:570px;height:380px;float:left;display:none;" id="loc">
-
 </div>
-
 <div id="cleared" ></div>
 </div>
 <!--
@@ -369,7 +342,6 @@ var list = [
             console.log(lamppost);
             socket.emit("lamppost", lamppost);
         }
-
         var socket = io.connect();
         socket.on('lamp_states', function(data) {
             console.log(data);
@@ -377,16 +349,12 @@ var list = [
             document.getElementById("1").checked = data[1];
             document.getElementById("2").checked = data[2];
         });
-
 	var dateStart = 0;
         var dateEnd;
         var prevCpStatus = 0;
         var prevSpdData=0;
  	var currLoc=0;
         var audio;
-
-
-
         socket.on('sensors', function(data) {
             console.log(data);
             document.getElementById("humidity").innerHTML = data.humidity;
@@ -416,7 +384,6 @@ var list = [
  	    }
            else {
            }
-
 	    if (data.geolocation ==1)
 	{
 	document.getElementById("loc").src="images/cairn.jpg";
@@ -599,4 +566,3 @@ image.src=list[index];
 
 </body>
 </html>
-
