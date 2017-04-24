@@ -1,14 +1,39 @@
-var express = require('express');
-var app = express();
-var server = require('http').createServer(app);
+//cvar express = require('express');
+//cvar app = express();
+
+//cvar server = require('http').createServer(app);
+
+    var fs = require('fs'),
+    https = require('https'),
+    express = require('express'),
+    app = express();
+
+ var server  = https.createServer({
+      key: fs.readFileSync('key.pem'),
+      cert: fs.readFileSync('cert.pem')
+    }, app);
+
 var io = require('socket.io')(server);
 //either use cloud service port or local port:3000
-var port = process.env.PORT || 8000;
+//cvar port = process.env.PORT || 8443;
 //import firmata library
 var firmata = require("firmata");
 var SerialPort = require("serialport");
 var request = require('request');
 
+
+
+
+server.listen(55555, function() {
+    console.log('Server listening at port %d', 55555);
+});
+
+/*
+    app.get('/', function (req, res) {
+      res.header('Content-type', 'text/html');
+      return res.end('<h1>Hello, Secure World!</h1>');
+    });
+*/
 
 //define lamppost pin assignments here
 var lamp_pins = [5, 6, 7];
@@ -16,10 +41,6 @@ var boot_pin = 13;
 var lamp_states = [0,0,0];
 var trigger_is_done = true;
 
-//open port 8000
-server.listen(port, function() {
-    console.log('Server listening at port %d', port);
-});
 
 //host the index file
 app.use(express.static(__dirname));
@@ -28,7 +49,7 @@ var board = new firmata.Board("/dev/lampposts", function(err) {
     //boot-up indicator
     board.pinMode(boot_pin, board.MODES.OUTPUT);
     board.digitalWrite(boot_pin, 1);
-    
+
     io.on('connection', function(socket) {
         //send all the current states of the lamppost if new client is open
         //this is to prevent the UI from displaying the defualt view "all off" every time the client is refreshed
@@ -48,9 +69,9 @@ var board = new firmata.Board("/dev/lampposts", function(err) {
         socket.on("lamppost", function(lamppost_data) {
 
             //trigger real lamp post if cluster 3 is triggered
-            if (parseInt(lamppost_data.id) == 2) 
+            if (parseInt(lamppost_data.id) == 2)
                 toggleRealLampPost(lamppost_data.state);
-            
+
             var id = parseInt(lamppost_data.id)
             toggleFakeLampPost(id, lamppost_data.state);
         });
@@ -87,7 +108,7 @@ sensorsport.on('data', function(data) {
         console.log("triggered");
         notifySpeeding();
     }
-    console.log(sensors);
+    // console.log(sensors);
 
     //send the data to the client
     io.emit("sensors", sensors);
@@ -114,17 +135,18 @@ trafficport.on('data', function(data) {
     trafficlight.trafficlight2 = data.substring(data.indexOf('a') + 1, data.indexOf('b'));
     ambulance = data.substring(data.indexOf('b') + 1, data.indexOf('t'));
 
-    console.log(trafficlight.trafficlight1.length);
     //send the data to the client
 
     //this block is to filter the data from sending continuously
     //only send to client if ambulance data is parsed. Otherwise send traffic light data
     if(ambulance ==  1){
         io.emit("ambulance", ambulance);
+        // console.log(ambulance);
     }
 
     else{
         io.emit("trafficlight", trafficlight);
+        console.log(trafficlight);
     }
 });
 
@@ -149,16 +171,22 @@ function toggleRealLampPost(state) {
     } else if (state == false) {
         var url = "http://mylinkit.local:8001/?value=low"
     }
-    request(url, function(error, response, body) {
-        // console.log('error:', error); // Print the error if one occurred
-        // console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-        // console.log('body:', body); // Print the HTML for the Google homepage.
-    });
-    //stopre lamp post states
-    lamp_states[3] = state;
+    try{
+        request(url, function(error, response, body) {
+            // console.log('error:', error); // Print the error if one occurred
+            // console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+            // console.log('body:', body); // Print the HTML for the Google homepage.
+        });
+                //stopre lamp post states
+        lamp_states[3] = state;
 
-    //update the client of the lamppost states
-    io.emit("lamp_states", lamp_states);
+        //update the client of the lamppost states
+        io.emit("lamp_states", lamp_states);
+    }
+    catch(err){
+        console.log(err);
+    }
+
 }
 
 function toggleFakeLampPost(id, state){
@@ -166,7 +194,7 @@ function toggleFakeLampPost(id, state){
     var pin = lamp_pins[id];
 
     board.digitalWrite(pin, state);
-    
+
     //remember the states of the lamppost
     lamp_states[id] = state;
     io.emit("lamp_states", lamp_states);
@@ -177,7 +205,7 @@ function notifySpeeding(){
     var counter = 0;
     var speed_trigger = setInterval(function (){
         counter = counter + 1;
-  
+
         if (state == true) {
             // board.pinMode(boot_pin, board.MODES.OUTPUT);
             board.digitalWrite(7, true);
@@ -187,11 +215,19 @@ function notifySpeeding(){
             board.digitalWrite(7, false);
             var url = "http://mylinkit.local:8001/?value=low"
         }
-        request(url, function(error, response, body) {
-            // console.log('error:', error); // Print the error if one occurred
-            // console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-            // console.log('body:', body); // Print the HTML for the Google homepage.
-        });
+        //DELETE THIS BLOCK IF LAMPPOST IS DOWN!!!!
+        //PANIC MODE STARTS HERE
+        try{
+            request(url, function(error, response, body) {
+                // console.log('error:', error); // Print the error if one occurred
+                // console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+                // console.log('body:', body); // Print the HTML for the Google homepage.
+            });
+        }
+        catch(err){
+            console.log(err);
+        }
+        //PANIC MODE ENDS HERE
         state = !state
         if(counter == 10){
             // return;
