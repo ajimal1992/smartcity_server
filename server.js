@@ -4,14 +4,18 @@
 //cvar server = require('http').createServer(app);
 
     var fs = require('fs'),
-    https = require('https'),
+    //https = require('https'),
     express = require('express'),
     app = express();
+	
+	var server = require('http').createServer(app);
 
+ /* --used HTTP instead of HTTPS due to certificate issues. TODO: Implement HTTPS 
  var server  = https.createServer({
       key: fs.readFileSync('key.pem'),
       cert: fs.readFileSync('cert.pem')
     }, app);
+	*/
 
 var io = require('socket.io')(server);
 //either use cloud service port or local port:3000
@@ -165,6 +169,38 @@ app.get('/lamppost', function(request, response) {
     toggleFakeLampPost(2,state);
 });
 
+app.get('/states', function(request, response) {
+	console.log("Testing.");
+	var JSONres = {
+		states: lamp_states
+	};
+	
+	//console.log("testing with log");
+	console.log(JSONres);
+    response.json(JSONres); 
+});
+
+app.get('/toggleState', function(request, response) {
+	//http://localhost:55555/toggleState?state=true&index=0
+	var state = request.query.state;
+	var index = request.query.index;
+	var JSONres = {
+		index: index,
+		state: state
+	};
+	
+	if (state == 'true')
+        state = true;
+    else if (state == 'false')
+        state = false;
+    //toggleRealLampPost(state);
+    toggleFakeLampPost(index,state);
+	console.log("Received state: " + state + ", index: " + index);
+	
+	response.json(JSONres); //Send an OK response
+	
+});
+
 function toggleRealLampPost(state) {
     if (state == true) {
         var url = "http://mylinkit.local:8001/?value=high"
@@ -192,7 +228,7 @@ function toggleRealLampPost(state) {
 function toggleFakeLampPost(id, state){
     //turn on/off the correct lamppost by id
     var pin = lamp_pins[id];
-
+	
     board.digitalWrite(pin, state);
 
     //remember the states of the lamppost
@@ -237,3 +273,4 @@ function notifySpeeding(){
         }
     },200);
 }
+
